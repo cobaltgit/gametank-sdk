@@ -1,10 +1,10 @@
-use std::time::Duration;
+use std::{rc::Rc, time::Duration};
 
 use crossbeam_channel::Sender;
 use rat_widget::menu::{popup_menu, PopupMenu, PopupMenuState};
 use ratatui::{crossterm::event::{Event, KeyCode, KeyEvent}, layout::Alignment, style::{Color, Modifier, Style, Stylize}, symbols::border::{self}, widgets::{block::Position, Block, List, ListDirection, ListState, Widget}, Frame};
 
-use crate::{helpers::{centered_rect, SCHEME}, ui::quickmenu::{qi, QuickMenu}, Component, GlobalEvent};
+use crate::{helpers::{centered_rect, SCHEME}, tracker::Tracker, ui::quickmenu::{qi, QuickMenu}, Component, GlobalEvent};
 
 pub struct MainMenu {
     has_podman: bool,
@@ -14,14 +14,19 @@ pub struct MainMenu {
 }
 
 impl MainMenu {
-    pub fn init(tx: Sender<GlobalEvent>) -> Self {
+    pub fn init(tx_main: Sender<GlobalEvent>) -> Self {
         // TODO: if has podman
         let has_podman = false;
 
-        let qm = QuickMenu::init(vec![
+        let txx = tx_main.clone();
+
+        let qm = QuickMenu::init(" Program Select ".to_string(), vec![
             qi("_Emulator", true, || { todo!() }),
-            qi("_Tracker", true, || { todo!() }),
-            qi("_Build", has_podman, || { todo!() }),
+            qi("_Tracker", true, move || {
+                let tracker = Tracker::init(txx.clone());
+                let _ = txx.send(GlobalEvent::ChangeInterface(Box::new(tracker))); 
+            }),
+            qi("_Build", has_podman, || { println!("ur mom") }),
             qi("ROM _Flasher", true, || { todo!() }),
         ]);
 
@@ -29,7 +34,7 @@ impl MainMenu {
             has_podman,
             quit: false,
             qm,
-            tx,
+            tx: tx_main,
         }
     }
 }

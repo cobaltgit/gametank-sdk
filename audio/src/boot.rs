@@ -89,7 +89,9 @@ pub static _VECTOR_TABLE: [unsafe extern "C" fn(); 3] = [
 #[unsafe(no_mangle)]
 fn casio_loopy() {
     loop {
-        
+        unsafe { 
+            wait();
+        }
     }
 }
 

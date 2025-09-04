@@ -1,6 +1,7 @@
 pub mod main_menu;
 pub mod helpers;
 pub mod ui;
+pub mod tracker;
 
 use ratatui::{crossterm::event::Event, DefaultTerminal, Frame};
 use anyhow::{bail, Ok, Result};

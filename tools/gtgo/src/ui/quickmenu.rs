@@ -1,7 +1,8 @@
 use std::{collections::HashMap, rc::Rc, time::Duration};
 
+use crossbeam_channel::select;
 use rat_widget::menu::{popup_menu, PopupMenu, PopupMenuState};
-use ratatui::{crossterm::event::{Event, KeyCode, KeyEvent}, layout::{Alignment, Rect}, style::{Color, Modifier, Style, Stylize}, symbols::border::{self}, text::{Line, Span, Text}, widgets::{block::Position, Block, BorderType, List, ListDirection, ListState, Padding}, Frame};
+use ratatui::{crossterm::event::{Event, KeyCode, KeyEvent}, layout::{Alignment, Rect}, style::{Color, Modifier, Style, Stylize}, symbols::border::{self}, text::{Line, Span, Text}, widgets::{block::Position, Block, BorderType, List, ListDirection, ListState, Padding, StatefulWidget}, Frame};
 
 use crate::{helpers::{centered_rect, SCHEME}, Component};
 
@@ -35,7 +36,13 @@ impl<'a> Into<Text<'a>> for QuickMenuItem {
             Span::from(after.to_string()),
         ];
 
-        Text::from(Line::from(spans))
+        let line = Text::from(Line::from(spans));
+
+        if !self.enabled {
+            line.style(Style::new().fg(SCHEME.gray[2]))
+        } else {
+            line
+        }
     }
 }
 
@@ -50,6 +57,7 @@ enum Input {
 }
 
 pub struct QuickMenu {
+    title: String,
     selection: usize,
     list_items: Vec<QuickMenuItem>,
     bound_keys: HashMap<KeyCode, Input>,
@@ -59,7 +67,7 @@ pub struct QuickMenu {
 }
 
 impl QuickMenu {
-    pub fn init(items: Vec<QmItem>) -> Self {
+    pub fn init(title: String, items: Vec<QmItem>) -> Self {
         let mut bound_keys = HashMap::new();
         bound_keys.insert(KeyCode::Esc, Input::Quit);
         bound_keys.insert(KeyCode::Char('q'), Input::Quit);
@@ -78,7 +86,7 @@ impl QuickMenu {
             let hotkey = s[idx + 1..].chars().next();
             let without = format!("{}{}", &s[..idx], &s[idx + 1..]);
 
-            list_items.push(QuickMenuItem { label: without, enabled: true, hotkey_idx: idx, active });
+            list_items.push(QuickMenuItem { label: without, enabled: en, hotkey_idx: idx, active });
             if let Some(keychar) = hotkey {
                 bound_keys.insert(KeyCode::Char(keychar.to_ascii_lowercase()), Input::Selection(list_items.len() - 1));
             }
@@ -91,6 +99,7 @@ impl QuickMenu {
             is_active: true,
             width: 24,
             height: height as u16,
+            title,
         }
     }
 
@@ -112,6 +121,11 @@ impl QuickMenu {
         }
         self.selection = i as usize;
     }
+    
+    fn select(&self) {
+        let x = self.list_items.get(self.selection).unwrap();
+        (x.active)();
+    }
 }
 
 
@@ -121,7 +135,7 @@ impl Component for QuickMenu {
         let style = SCHEME.style(Color::Rgb(36, 36, 36));
 
         let select_border = Block::bordered()
-            .title(" Program Select ")
+            .title(self.title.clone())
             .title_style(style.gray().bold().not_italic().fg(SCHEME.orange[1]))
             .style(style.fg(SCHEME.orange[1]))
             .padding(Padding::new(1,0,1,1))
@@ -151,9 +165,21 @@ impl Component for QuickMenu {
             match e {
                 Event::Key(KeyEvent { code, .. }) if self.bound_keys.contains_key(&code) => {
                     match self.bound_keys.get(&code).unwrap() {
-                        Input::Selection(n) => self.selection = *n,
+                        Input::Selection(n) => {
+                            if !self.list_items.get(*n).unwrap().enabled {
+                                continue; // handle other events
+                            }
+
+                            if self.selection == *n {
+                                self.select();
+                            } else {
+                                self.selection = *n
+                            }
+                        },
                         Input::Quit => self.set_active(false),
-                        Input::Enter => todo!(),
+                        Input::Enter => {
+                            self.select();
+                        },
                         Input::Up => {
                             self.move_sel(-1);
                         },

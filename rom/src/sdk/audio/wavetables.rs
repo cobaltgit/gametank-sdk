@@ -64,9 +64,9 @@ impl Voice {
 
 
 // who cares about aliasing
-pub fn voices() -> &'static mut [Voice; 7] {
+pub fn voices() -> &'static mut [Voice; 8] {
     unsafe {
-        &mut *(0x3041 as *mut [Voice; 7])
+        &mut *(0x3041 as *mut [Voice; 8])
     }
 }
 

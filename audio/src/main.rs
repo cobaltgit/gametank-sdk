@@ -145,7 +145,7 @@ extern "C" fn audio_irq() {
         }
 
         let mixed = (sum >> 3) as u8;
-        *sample = mixed.wrapping_sub(16);  // re-bias for DAC
+        *sample = mixed;  // re-bias for DAC
 
         return_from_interrupt();
     }
