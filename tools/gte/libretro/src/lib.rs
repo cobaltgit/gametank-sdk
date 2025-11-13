@@ -18,7 +18,6 @@ use libretro_rs::prelude::env::{GetAvInfo, Init, Reset, Run, UnloadGame};
 struct CoreEmulator {
     emu: Emulator<InstantClock>,
     rendering_mode: Option<SoftwareRenderEnabled>,
-    // game_data: Option<GameData>,
     input_bindings: HashMap<(c_uint, JoypadButton), InputCommand>,
     pixel_format: Option<ActiveFormat<ORGB1555>>,
     framebuffer: FrameBufferThing,
@@ -51,7 +50,6 @@ impl Default for CoreEmulator {
         input_bindings.insert((0, JoypadButton::Right), Controller1(ControllerButton::Right));
         input_bindings.insert((0, JoypadButton::A), Controller1(ControllerButton::A));
         input_bindings.insert((0, JoypadButton::B), Controller1(ControllerButton::B));
-        // input_bindings.insert((0, JoypadButton::X), Controller1(ControllerButton::C));
         input_bindings.insert((0, JoypadButton::Y), Controller1(ControllerButton::C));
 
         input_bindings.insert((1, JoypadButton::Start), Controller2(ControllerButton::Start));
@@ -61,8 +59,7 @@ impl Default for CoreEmulator {
         input_bindings.insert((1, JoypadButton::Right), Controller2(ControllerButton::Right));
         input_bindings.insert((1, JoypadButton::A), Controller2(ControllerButton::A));
         input_bindings.insert((1, JoypadButton::B), Controller2(ControllerButton::B));
-        // input_bindings.insert((1, JoypadButton::X), Controller2(ControllerButton::C));
-        input_bindings.insert((1, JoypadButton::Y), Controller1(ControllerButton::C));
+        input_bindings.insert((1, JoypadButton::Y), Controller2(ControllerButton::C));
 
         Self {
             emu: Emulator::init(clock, 44100.0),
@@ -75,18 +72,6 @@ impl Default for CoreEmulator {
 }
 
 pub fn buffer_to_color_image(framebuffer: &[u8; 128*128]) -> Vec<u8> {
-    // let mut pixels: Vec<u8> = Vec::with_capacity(128 * 128 * 4); // 4 channels per pixel (RGBA)
-
-    // for &index in framebuffer.iter() {
-    //     let (r, g, b, a) = COLOR_MAP[index as usize];
-    //     pixels.push(b);
-    //     pixels.push(g);
-    //     pixels.push(r);
-    //     pixels.push(a);
-    // }
-
-    // pixels
-
     let mut pixels = Vec::with_capacity(128 * 128 * 2);
 
     for &index in framebuffer.iter() {
@@ -113,8 +98,8 @@ impl<'a> Core<'a> for CoreEmulator {
     fn get_system_info() -> SystemInfo {
         SystemInfo::new(
             c_utf8!("GameTank Rust!"),
-            c_utf8!("1.69.422"),
-            Extensions::new(c_utf8!("gtr")),
+            c_utf8!("0.1.2"),
+            ext!["zip", "gtr", "gtrs", "bin", "rom", "hex"],
         )
     }
 
@@ -195,7 +180,8 @@ impl<'a> Core<'a> for CoreEmulator {
     }
 
     fn unload_game(self, env: &mut impl UnloadGame) -> Self::Init {
-        todo!()
+        // self will be dropped here, so we can just return the default state
+        Self::default()
     }
 }
 

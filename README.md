@@ -19,7 +19,7 @@ development is done in vscode (sry), and there's a `.vscode/settings.json` for t
 
 ## Requirements
 
-  
+
 
 
   
@@ -28,7 +28,9 @@ development is done in vscode (sry), and there's a `.vscode/settings.json` for t
 
   
 
-please just install wsl, please - you'll be doing everyone a favor
+~~please just install wsl, please - you'll be doing everyone a favor~~
+
+
 
   
 
